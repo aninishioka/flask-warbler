@@ -21,6 +21,14 @@
             </span>
         <p>{{ message.text }}</p>
       </div>
+
+      <button>
+        {% if message in g.user.likes %}
+        <i class="bi bi-star-fill"></i>
+        {% else %}
+        <i class="bi bi-star"></i>
+        {% endif %}
+      </button>
     </li>
 
     {% endfor %}
