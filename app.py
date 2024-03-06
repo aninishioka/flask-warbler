@@ -5,6 +5,7 @@ from flask import Flask, render_template, request, flash, redirect, session, g
 from flask_debugtoolbar import DebugToolbarExtension
 from sqlalchemy.exc import IntegrityError
 from werkzeug.exceptions import Unauthorized
+from sqlalchemy import or_
 
 from forms import UserAddForm, LoginForm, MessageForm, CsrfProtectForm, UpdateUserForm
 from models import db, connect_db, User, Message
@@ -376,8 +377,8 @@ def homepage():
         messages = (Message
                     .query
                     # .filter(User.id == g.user.id)
-                    .filter(Message.user_id == g.user.id or
-                            Message.user_id.in_(following))
+                    .filter(or_(Message.user_id == g.user.id,
+                            Message.user_id.in_(following)))
                     .order_by(Message.timestamp.desc())
                     .limit(100)
                     .all())
