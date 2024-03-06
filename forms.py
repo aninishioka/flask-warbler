@@ -46,5 +46,23 @@ class LoginForm(FlaskForm):
         validators=[InputRequired(), Length(min=6, max=50)],
     )
 
+class UpdateUserForm(UserAddForm):
+    """Edit user form."""
+
+    header_image_url = StringField(
+        "Header Image",
+        validators=[Optional(), URL(), Length(max=255)]
+    )
+
+    bio = TextAreaField(
+        "Bio",
+        validators=[Optional()]
+    )
+
+    location = StringField(
+        "Location",
+        validators=[Optional(), Length(max=30)]
+    )
+
 class CsrfProtectForm(FlaskForm):
     """CSRF protect form."""

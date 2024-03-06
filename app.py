@@ -6,7 +6,7 @@ from flask_debugtoolbar import DebugToolbarExtension
 from sqlalchemy.exc import IntegrityError
 from werkzeug.exceptions import Unauthorized
 
-from forms import UserAddForm, LoginForm, MessageForm, CsrfProtectForm
+from forms import UserAddForm, LoginForm, MessageForm, CsrfProtectForm, UpdateUserForm
 from models import db, connect_db, User, Message
 
 load_dotenv()
@@ -17,7 +17,7 @@ app = Flask(__name__)
 
 app.config['SQLALCHEMY_DATABASE_URI'] = os.environ['DATABASE_URL']
 app.config['SQLALCHEMY_ECHO'] = False
-app.config['DEBUG_TB_INTERCEPT_REDIRECTS'] = True
+app.config['DEBUG_TB_INTERCEPT_REDIRECTS'] = False
 app.config['SECRET_KEY'] = os.environ['SECRET_KEY']
 toolbar = DebugToolbarExtension(app)
 
@@ -166,7 +166,7 @@ def show_user(user_id):
 
     user = User.query.get_or_404(user_id)
 
-    return render_template('users/show.html', user=user)
+    return render_template('users/show.html', user=user, form=g.csrf_form)
 
 
 @app.get('/users/<int:user_id>/following')
@@ -178,7 +178,7 @@ def show_following(user_id):
         return redirect("/")
 
     user = User.query.get_or_404(user_id)
-    return render_template('users/following.html', user=user)
+    return render_template('users/following.html', user=user, form=g.csrf_form)
 
 
 @app.get('/users/<int:user_id>/followers')
@@ -245,7 +245,28 @@ def stop_following(follow_id):
 def profile():
     """Update profile for current user."""
 
-    # IMPLEMENT THIS
+    if not g.user:
+        flash("Access unauthorized.", "danger")
+        return redirect("/")
+
+    form = UpdateUserForm(obj=g.user)
+
+    if form.validate_on_submit():
+        User.authenticate(g.user.username, form.password.data)
+
+        g.user.username = form.username.data
+        g.user.email = form.email.data
+        g.user.image_url = form.image_url.data
+        g.user.header_image_url = form.header_image_url.data
+        g.user.bio = form.bio.data
+        g.user.location = form.location.data
+
+        db.session.commit()
+
+        return redirect(f'/users/{g.user.id}')
+
+    else:
+        return render_template("users/edit.html", form=form)
 
 
 @app.post('/users/delete')
@@ -351,9 +372,12 @@ def homepage():
     """
 
     if g.user:
+        following = [user.id for user in g.user.following]
         messages = (Message
                     .query
-                    .filter(User.id == g.user.id)
+                    # .filter(User.id == g.user.id)
+                    .filter(Message.user_id == g.user.id or
+                            Message.user_id.in_(following))
                     .order_by(Message.timestamp.desc())
                     .limit(100)
                     .all())
