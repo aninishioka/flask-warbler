@@ -279,7 +279,24 @@ nav + .container {
   padding: 7px 20px 12px;
 }
 
-#messages:not(.no-hover) .list-group-item:hover {
+#messages .like-button {
+  position: relative;
+  z-index: 2;
+  border: none;
+  background-color: var(--bs-body-bg);
+}
+
+
+
+#messages .like-button:hover {
+  background-color: #e6ecf0;
+}
+
+#messages:not(.no-hover) .list-group-item:hover{
+  background-color: #e6ecf0;
+}
+
+#messages:hover .like-button{
   background-color: #e6ecf0;
 }
 

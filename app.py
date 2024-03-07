@@ -4,7 +4,6 @@ from dotenv import load_dotenv
 from flask import Flask, render_template, request, flash, redirect, session, g
 from flask_debugtoolbar import DebugToolbarExtension
 from sqlalchemy.exc import IntegrityError
-from sqlalchemy import or_
 
 from forms import UserAddForm, LoginForm, MessageForm, CsrfProtectForm, UpdateUserForm
 from models import db, connect_db, User, Message, DEFAULT_IMAGE_URL, DEFAULT_HEADER_IMAGE_URL
@@ -278,6 +277,19 @@ def delete_user():
     return redirect("/signup")
 
 
+@app.get('/users/<int:user_id>/likes')
+def show_user_likes(user_id):
+    """Shows page of user likes"""
+
+    if not g.user:
+        flash("Access unauthorized.", "danger")
+        return redirect("/")
+
+    user = User.query.get_or_404(user_id)
+
+    return render_template('users/likes.html', user=user)
+
+
 ##############################################################################
 # Messages routes:
 
@@ -336,6 +348,26 @@ def delete_message(message_id):
         db.session.commit()
 
         return redirect(f"/users/{g.user.id}")
+
+@app.post('/messages/<int:message_id>/like')
+def like_message(message_id):
+    """Like or unlike a message depending if the user has already liked or not"""
+
+    if not g.user or not g.csrf_form.validate_on_submit():
+        flash("Access unauthorized.", "danger")
+        return redirect("/")
+
+    msg = Message.query.get_or_404(message_id)
+
+    if msg in g.user.likes:
+        g.user.likes.remove(msg)
+        db.session.commit()
+
+    else:
+        g.user.likes.append(msg)
+        db.session.commit()
+
+    return redirect(f'/users/{g.user.id}/likes')
 
 
 ##############################################################################
