@@ -21,8 +21,10 @@
             </span>
         <p>{{ message.text }}</p>
       </div>
+      {% if g.user.id != message.user.id %}
       <form action="/messages/{{message.id}}/like" method="POST">
         {{ g.csrf_form.hidden_tag() }}
+        <input type="hidden" name="current_url" value="{{request.url}}">
         <button class="like-button">
           {% if message in g.user.likes %}
           <i class="bi bi-star-fill"></i>
@@ -31,6 +33,7 @@
           {% endif %}
         </button>
       </form>
+      {% endif %}
     </li>
 
     {% endfor %}

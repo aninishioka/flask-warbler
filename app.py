@@ -1,11 +1,11 @@
 import os
 from dotenv import load_dotenv
 
-from flask import Flask, render_template, request, flash, redirect, session, g
+from flask import Flask, render_template, request, flash, redirect, session, g, request
 from flask_debugtoolbar import DebugToolbarExtension
 from sqlalchemy.exc import IntegrityError
 
-from forms import UserAddForm, LoginForm, MessageForm, CsrfProtectForm, UpdateUserForm
+from forms import UserAddForm, LoginForm, MessageForm, CsrfProtectForm, UpdateUserForm, LikeButtonForm
 from models import db, connect_db, User, Message, DEFAULT_IMAGE_URL, DEFAULT_HEADER_IMAGE_URL
 
 load_dotenv()
@@ -40,6 +40,7 @@ def add_csrfform_to_g():
     """If we're logged in, add curr user to Flask global."""
 
     g.csrf_form = CsrfProtectForm()
+
 
 
 def do_login(user):
@@ -322,7 +323,7 @@ def show_message(message_id):
 
     msg = Message.query.get_or_404(message_id)
 
-    if not g.user or not msg.user_id == g.user.id:
+    if not g.user:
         flash("Access unauthorized.", "danger")
         return redirect("/")
 
@@ -357,17 +358,19 @@ def like_message(message_id):
         flash("Access unauthorized.", "danger")
         return redirect("/")
 
+    current_url = request.form.get("current_url", '/')
+
     msg = Message.query.get_or_404(message_id)
 
     if msg in g.user.likes:
         g.user.likes.remove(msg)
-        db.session.commit()
 
     else:
         g.user.likes.append(msg)
-        db.session.commit()
 
-    return redirect(f'/users/{g.user.id}/likes')
+    db.session.commit()
+
+    return redirect(f'{current_url}')
 
 
 ##############################################################################

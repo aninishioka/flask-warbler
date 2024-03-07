@@ -283,20 +283,25 @@ nav + .container {
   position: relative;
   z-index: 2;
   border: none;
+}
+
+.like-button {
   background-color: var(--bs-body-bg);
 }
 
+.bi-star:hover {
+  color: #e8e802;
+}
 
+.bi-star-fill {
+  color: #e8e802;
+}
 
-#messages .like-button:hover {
+.list-group-item:hover .like-button{
   background-color: #e6ecf0;
 }
 
 #messages:not(.no-hover) .list-group-item:hover{
-  background-color: #e6ecf0;
-}
-
-#messages:hover .like-button{
   background-color: #e6ecf0;
 }
 

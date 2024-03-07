@@ -1,5 +1,5 @@
 from flask_wtf import FlaskForm
-from wtforms import StringField, PasswordField, TextAreaField
+from wtforms import StringField, PasswordField, TextAreaField, HiddenField
 from wtforms.validators import InputRequired, Email, Length, URL, Optional
 
 
@@ -63,6 +63,15 @@ class UpdateUserForm(UserAddForm):
         "Location",
         validators=[Optional(), Length(max=30)]
     )
+
+class LikeButtonForm(FlaskForm):
+    """Like button form."""
+
+    current_url = HiddenField(
+        validators=[InputRequired(), URL()]
+    )
+
+
 
 class CsrfProtectForm(FlaskForm):
     """CSRF protect form."""
