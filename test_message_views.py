@@ -53,6 +53,12 @@ class MessageBaseViewTestCase(TestCase):
         self.u1_id = u1.id
         self.m1_id = m1.id
 
+
+    def tearDown(self):
+        """Clean up any fouled transaction."""
+        db.session.rollback()
+
+
 class MessageAddViewTestCase(MessageBaseViewTestCase):
     def test_add_message(self):
         # Since we need to change the session to mimic logging in,

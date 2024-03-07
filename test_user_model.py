@@ -9,7 +9,7 @@ import os
 from unittest import TestCase
 from sqlalchemy.exc import IntegrityError
 
-from models import db, User, Message, Follow, DEFAULT_HEADER_IMAGE_URL, DEFAULT_IMAGE_URL
+from models import db, User, Follow, DEFAULT_HEADER_IMAGE_URL, DEFAULT_IMAGE_URL
 
 # BEFORE we import our app, let's set an environmental variable
 # to use a different database for tests (we need to do this
