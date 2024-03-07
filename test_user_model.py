@@ -34,6 +34,8 @@ db.create_all()
 
 class UserModelTestCase(TestCase):
     def setUp(self):
+        """Add sample data."""
+
         User.query.delete()
 
         u1 = User.signup("u1", "u1@email.com", "password", None)
@@ -43,17 +45,25 @@ class UserModelTestCase(TestCase):
         self.u1_id = u1.id
         self.u2_id = u2.id
 
+
     def tearDown(self):
+        """Clean up any fouled transaction."""
+
         db.session.rollback()
 
+
     def test_user_model(self):
+        """Test user creation."""
+
         u1 = User.query.get(self.u1_id)
 
         # User should have no messages & no followers
         self.assertEqual(len(u1.messages), 0)
         self.assertEqual(len(u1.followers), 0)
 
+
     def test_is_following_none(self):
+        """Test no followers."""
         u1 = User.query.get(self.u1_id)
         u2 = User.query.get(self.u2_id)
 
@@ -63,6 +73,8 @@ class UserModelTestCase(TestCase):
 
 
     def test_is_following_one(self):
+        """Test u1 following u2."""
+
         new_follow = Follow(
             user_being_followed_id=self.u1_id,
             user_following_id=self.u2_id)
@@ -76,7 +88,10 @@ class UserModelTestCase(TestCase):
         self.assertTrue(u2.is_following(u1))
         self.assertFalse(u1.is_following(u2))
 
+
     def test_is_following_both(self):
+        """test u1 and u2 follwing each other."""
+
         first_follow = Follow(
             user_being_followed_id=self.u1_id,
             user_following_id=self.u2_id)
@@ -95,14 +110,20 @@ class UserModelTestCase(TestCase):
         self.assertTrue(u2.is_following(u1))
         self.assertTrue(u1.is_following(u2))
 
+
     def test_is_followed_by_none(self):
+        """Test no follows."""
+
         u1 = User.query.get(self.u1_id)
         u2 = User.query.get(self.u2_id)
 
         self.assertFalse(u2.is_followed_by(u1))
         self.assertFalse(u1.is_followed_by(u2))
 
+
     def test_is_followed_by_one(self):
+        """Test u1 is followed by u2."""
+
         new_follow = Follow(
             user_being_followed_id=self.u1_id,
             user_following_id=self.u2_id)
@@ -116,7 +137,10 @@ class UserModelTestCase(TestCase):
         self.assertTrue(u1.is_followed_by(u2))
         self.assertFalse(u2.is_followed_by(u1))
 
+
     def test_is_followed_by_both(self):
+        """Test u1 and u2 follow each other."""
+
         first_follow = Follow(
             user_being_followed_id=self.u1_id,
             user_following_id=self.u2_id)
@@ -135,7 +159,10 @@ class UserModelTestCase(TestCase):
         self.assertTrue(u1.is_followed_by(u2))
         self.assertTrue(u2.is_followed_by(u1))
 
+
     def test_user_signup_success(self):
+        """Test successful user signup."""
+
         u3 = User.signup("u3", "u3@email.com", "password", None)
 
         self.assertEqual(User.query.count(), 3)
@@ -143,32 +170,50 @@ class UserModelTestCase(TestCase):
         self.assertEqual(u3.header_image_url, DEFAULT_HEADER_IMAGE_URL)
         self.assertIsInstance(u3, User)
 
+
     def test_user_signup_fail_username(self):
+        """Test user signup with taken username"""
+
         with self.assertRaises(IntegrityError):
             User.signup("u2", "u3@email.com", "password", None)
             db.session.commit()
 
+
     def test_user_signup_fail_email(self):      #Why do we need to break up?
+        """Test user signup with bad email"""
+
         with self.assertRaises(IntegrityError):
             User.signup("u3", "u2@email.com", "password", None)
             db.session.commit()
 
+
     def test_user_signup_fail_null(self):
+        """Test user signup with null password"""
+
         with self.assertRaises(ValueError):
             User.signup("u3", "u3@email.com", None)
 
+
     def test_user_authenticate_success(self):
+        """Test successful user authenticate"""
+
         u2 = User.authenticate("u2", "password")
 
         self.assertIsInstance(u2, User)
         self.assertEqual(u2.username, 'u2')
 
+
     def test_user_authenticate_fail_username(self):
+        """Test user authenticate with bad username"""
+
         u5 = User.authenticate("u5", "password")
 
         self.assertFalse(u5)
 
+
     def test_user_authenticate_fail_password(self):
+        """Test user authenticate with bad password"""
+
         u2 = User.authenticate("u2", "passwordfail")
 
         self.assertFalse(u2)
