@@ -1,7 +1,7 @@
 import os
 from dotenv import load_dotenv
 
-from flask import Flask, render_template, request, flash, redirect, session, g, request
+from flask import Flask, render_template, request, flash, redirect, session, g, request, url_for
 from flask_debugtoolbar import DebugToolbarExtension
 from sqlalchemy import and_
 from sqlalchemy.exc import IntegrityError
@@ -141,7 +141,7 @@ def logout():
     if g.csrf_form.validate_on_submit():
         do_logout()
         flash('Successfully logged out.', 'success')
-        return redirect('/login')
+        return redirect(url_for('login'))
 
     flash("Access unauthorized.", "danger")
     return redirect("/")
@@ -157,10 +157,6 @@ def list_users():
 
     Can take a 'q' param in querystring to search by that username.
     """
-
-    # if not g.user:
-    #     flash("Access unauthorized.", "danger")
-    #     return redirect("/")
 
     search = request.args.get('q')
     blocked_by_ids = [user.id for user in g.user.blockers]
@@ -183,12 +179,9 @@ def list_users():
 
 
 @app.get('/users/<int:user_id>')
+@login_required
 def show_user(user_id):
     """Show user profile."""
-
-    if not g.user:
-        flash("Access unauthorized.", "danger")
-        return redirect("/")
 
     user = User.query.get_or_404(user_id)
 
@@ -201,12 +194,9 @@ def show_user(user_id):
 
 
 @app.get('/users/<int:user_id>/following')
+@login_required
 def show_following(user_id):
     """Show list of people this user is following."""
-
-    if not g.user:
-        flash("Access unauthorized.", "danger")
-        return redirect("/")
 
     user = User.query.get_or_404(user_id)
 
@@ -219,12 +209,9 @@ def show_following(user_id):
 
 
 @app.get('/users/<int:user_id>/followers')
+@login_required
 def show_followers(user_id):
     """Show list of followers of this user."""
-
-    if not g.user:
-        flash("Access unauthorized.", "danger")
-        return redirect("/")
 
     user = User.query.get_or_404(user_id)
 
@@ -237,12 +224,13 @@ def show_followers(user_id):
 
 
 @app.post('/users/follow/<int:follow_id>')
+@login_required
 def start_following(follow_id):
     """Add a follow for the currently-logged-in user.
 
     Redirect to following page for the current for the current user.
     """
-    if not g.user or not g.csrf_form.validate_on_submit():
+    if not g.csrf_form.validate_on_submit():
         flash("Access unauthorized.", "danger")
         return redirect("/")
 
@@ -254,12 +242,13 @@ def start_following(follow_id):
 
 
 @app.post('/users/stop-following/<int:follow_id>')
+@login_required
 def stop_following(follow_id):
     """Have currently-logged-in-user stop following this user.
 
     Redirect to following page for the current for the current user.
     """
-    if not g.user or not g.csrf_form.validate_on_submit():
+    if not g.csrf_form.validate_on_submit():
         flash("Access unauthorized.", "danger")
         return redirect("/")
 
@@ -267,17 +256,19 @@ def stop_following(follow_id):
     g.user.following.remove(followed_user)
     db.session.commit()
 
-    return redirect(f"/users/{g.user.id}/following")
+    return redirect(url_for('show_following', user_id=g.user.id))
+    # return redirect(f"/users/{g.user.id}/following")
 
 
 @app.post('/users/block/<int:block_id>')
+@login_required
 def start_block(block_id):
     """Add a blocked user for the currently-logged-in user.
 
     Redirect back to blocked user's page.
     """
 
-    if not g.user or not g.csrf_form.validate_on_submit():
+    if not g.csrf_form.validate_on_submit():
         flash("Access unauthorized.", "danger")
         return redirect("/")
 
@@ -292,12 +283,13 @@ def start_block(block_id):
 
 
 @app.post('/users/stop-blocking/<int:block_id>')
+@login_required
 def stop_blocking(block_id):
     """Have currently-logged-in-user stop blocking this user.
 
     Redirect back to unblocked user's page.
     """
-    if not g.user or not g.csrf_form.validate_on_submit():
+    if not g.csrf_form.validate_on_submit():
         flash("Access unauthorized.", "danger")
         return redirect("/")
 
@@ -309,12 +301,9 @@ def stop_blocking(block_id):
 
 
 @app.route('/users/profile', methods=["GET", "POST"])
+@login_required
 def profile():
     """Update profile for current user."""
-
-    if not g.user:
-        flash("Access unauthorized.", "danger")
-        return redirect("/")
 
     form = UpdateUserForm(obj=g.user)
 
@@ -345,13 +334,14 @@ def profile():
 
 
 @app.post('/users/delete')
+@login_required
 def delete_user():
     """Delete user.
 
     Redirect to signup page.
     """
 
-    if not g.user or not g.csrf_form.validate_on_submit():
+    if not g.csrf_form.validate_on_submit():
         flash("Access unauthorized.", "danger")
         return redirect("/")
 
@@ -367,12 +357,9 @@ def delete_user():
 
 
 @app.get('/users/<int:user_id>/likes')
+@login_required
 def show_user_likes(user_id):
     """Shows page of user likes"""
-
-    if not g.user:
-        flash("Access unauthorized.", "danger")
-        return redirect("/")
 
     user = User.query.get_or_404(user_id)
 
@@ -388,15 +375,12 @@ def show_user_likes(user_id):
 # Messages routes:
 
 @app.route('/messages/new', methods=["GET", "POST"])
+@login_required
 def add_message():
     """Add a message:
 
     Show form if GET. If valid, update message and redirect to user page.
     """
-
-    if not g.user:
-        flash("Access unauthorized.", "danger")
-        return redirect("/")
 
     form = MessageForm()
 
@@ -411,14 +395,11 @@ def add_message():
 
 
 @app.get('/messages/<int:message_id>')
+@login_required
 def show_message(message_id):
     """Show a message."""
 
     msg = Message.query.get_or_404(message_id)
-
-    if not g.user:
-        flash("Access unauthorized.", "danger")
-        return redirect("/")
 
     blocked_by_ids = [user.id for user in g.user.blockers]
 
@@ -429,6 +410,7 @@ def show_message(message_id):
 
 
 @app.post('/messages/<int:message_id>/delete')
+@login_required
 def delete_message(message_id):
     """Delete a message.
 
@@ -438,7 +420,7 @@ def delete_message(message_id):
 
     msg = Message.query.get_or_404(message_id)
 
-    if not g.user or not g.csrf_form.validate_on_submit() or msg.user_id != g.user.id:
+    if not g.csrf_form.validate_on_submit() or msg.user_id != g.user.id:
         flash("Access unauthorized.", "danger")
         return redirect("/")
 
@@ -448,10 +430,11 @@ def delete_message(message_id):
     return redirect(f"/users/{g.user.id}")
 
 @app.post('/messages/<int:message_id>/like')
+@login_required
 def like_message(message_id):
     """Like or unlike a message depending if the user has already liked or not"""
 
-    if not g.user or not g.csrf_form.validate_on_submit():
+    if not g.csrf_form.validate_on_submit():
         flash("Access unauthorized.", "danger")
         return redirect("/")
 
