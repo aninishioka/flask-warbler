@@ -3,6 +3,7 @@ from dotenv import load_dotenv
 
 from flask import Flask, render_template, request, flash, redirect, session, g, request
 from flask_debugtoolbar import DebugToolbarExtension
+from sqlalchemy import and_
 from sqlalchemy.exc import IntegrityError
 from functools import wraps
 
@@ -162,11 +163,21 @@ def list_users():
     #     return redirect("/")
 
     search = request.args.get('q')
+    blocked_by_ids = [user.id for user in g.user.blockers]
 
     if not search:
-        users = User.query.all()
+        users = (User
+                    .query
+                    .filter(User.id.not_in(blocked_by_ids))
+                    .all())
     else:
-        users = User.query.filter(User.username.like(f"%{search}%")).all()
+        users = (User
+                    .query
+                    .filter(and_(
+                        User.username.like(f"%{search}%"),
+                        User.id.not_in(blocked_by_ids)),)
+                    .all()
+                )
 
     return render_template('users/index.html', users=users)
 
@@ -181,6 +192,11 @@ def show_user(user_id):
 
     user = User.query.get_or_404(user_id)
 
+    blocked_by_ids = [user.id for user in g.user.blockers]
+
+    if user.id in blocked_by_ids:
+        return (render_template('404.html'), 404)
+
     return render_template('users/show.html', user=user)
 
 
@@ -193,6 +209,12 @@ def show_following(user_id):
         return redirect("/")
 
     user = User.query.get_or_404(user_id)
+
+    blocked_by_ids = [user.id for user in g.user.blockers]
+
+    if user.id in blocked_by_ids:
+        return (render_template('404.html'), 404)
+
     return render_template('users/following.html', user=user)
 
 
@@ -205,6 +227,12 @@ def show_followers(user_id):
         return redirect("/")
 
     user = User.query.get_or_404(user_id)
+
+    blocked_by_ids = [user.id for user in g.user.blockers]
+
+    if user.id in blocked_by_ids:
+        return (render_template('404.html'), 404)
+
     return render_template('users/followers.html', user=user)
 
 
@@ -240,6 +268,44 @@ def stop_following(follow_id):
     db.session.commit()
 
     return redirect(f"/users/{g.user.id}/following")
+
+
+@app.post('/users/block/<int:block_id>')
+def start_block(block_id):
+    """Add a blocked user for the currently-logged-in user.
+
+    Redirect back to blocked user's page.
+    """
+
+    if not g.user or not g.csrf_form.validate_on_submit():
+        flash("Access unauthorized.", "danger")
+        return redirect("/")
+
+    blocked_user = User.query.get_or_404(block_id)
+    g.user.blocking.append(blocked_user)
+    db.session.commit()
+
+    blocked_user.following.remove(g.user)
+    db.session.commit()
+
+    return redirect(f"/users/{blocked_user.id}")
+
+
+@app.post('/users/stop-blocking/<int:block_id>')
+def stop_blocking(block_id):
+    """Have currently-logged-in-user stop blocking this user.
+
+    Redirect back to unblocked user's page.
+    """
+    if not g.user or not g.csrf_form.validate_on_submit():
+        flash("Access unauthorized.", "danger")
+        return redirect("/")
+
+    blocked_user = User.query.get_or_404(block_id)
+    g.user.blocking.remove(blocked_user)
+    db.session.commit()
+
+    return redirect(f"/users/{blocked_user.id}")
 
 
 @app.route('/users/profile', methods=["GET", "POST"])
@@ -310,6 +376,11 @@ def show_user_likes(user_id):
 
     user = User.query.get_or_404(user_id)
 
+    blocked_by_ids = [user.id for user in g.user.blockers]
+
+    if user.id in blocked_by_ids:
+        return (render_template('404.html'), 404)
+
     return render_template('users/likes.html', user=user)
 
 
@@ -348,6 +419,11 @@ def show_message(message_id):
     if not g.user:
         flash("Access unauthorized.", "danger")
         return redirect("/")
+
+    blocked_by_ids = [user.id for user in g.user.blockers]
+
+    if msg.user_id in blocked_by_ids:
+        return (render_template('404.html'), 404)
 
     return render_template('messages/show.html', message=msg)
 

@@ -76,6 +76,18 @@
               <button class="btn btn-outline-primary">Follow</button>
             </form>
             {% endif %}
+            {% if g.user.is_blocking(user) %}
+            <form method="POST"
+                  action="/users/stop-blocking/{{ user.id }}">
+                  {{ g.csrf_form.hidden_tag() }}
+              <button class="btn btn-primary">Unblock</button>
+            </form>
+            {% else %}
+            <form method="POST" action="/users/block/{{ user.id }}">
+              {{ g.csrf_form.hidden_tag() }}
+              <button class="btn btn-outline-primary">Block</button>
+            </form>
+            {% endif %}
             {% endif %}
           </li>
 

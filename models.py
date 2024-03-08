@@ -36,6 +36,24 @@ class Follow(db.Model):
     )
 
 
+class Block(db.Model):
+    """Connection of a blocker <-> blocked_user."""
+
+    __tablename__ = 'blocks'
+
+    user_being_blocked_id = db.Column(
+        db.Integer,
+        db.ForeignKey('users.id', ondelete="cascade"),
+        primary_key=True,
+    )
+
+    user_blocking_id = db.Column(
+        db.Integer,
+        db.ForeignKey('users.id', ondelete="cascade"),
+        primary_key=True,
+    )
+
+
 class User(db.Model):
     """User in the system."""
 
@@ -98,6 +116,14 @@ class User(db.Model):
         backref="following",
     )
 
+    blockers = db.relationship(
+        "User",
+        secondary="blocks",
+        primaryjoin=(Block.user_being_blocked_id == id),
+        secondaryjoin=(Block.user_blocking_id == id),
+        backref="blocking",
+    )
+
     def __repr__(self):
         return f"<User #{self.id}: {self.username}, {self.email}>"
 
@@ -156,6 +182,21 @@ class User(db.Model):
         return len(found_user_list) == 1
 
 
+    def is_blocked_by(self, other_user):
+        """Is this user blocked by `other_user`"""
+
+        found_user_list = [
+            user for user in self.blockers if user == other_user]
+        return len(found_user_list) == 1
+
+    def is_blocking(self, other_user):
+        """Is this user blocking `other_user`"""
+
+        found_user_list = [
+            user for user in self.blocking if user == other_user]
+        return len(found_user_list) == 1
+
+
 class Message(db.Model):
     """An individual message ("warble")."""
 
@@ -202,6 +243,7 @@ class Like(db.Model):
         db.ForeignKey('users.id', ondelete="cascade"),
         primary_key=True,
     )
+
 
 
 def connect_db(app):
