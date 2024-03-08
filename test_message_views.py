@@ -96,8 +96,8 @@ class MessageAddViewTestCase(MessageBaseViewTestCase):
             self.assertIn('<p>Sign up now to get your own personalized timeline!</p>', html)
 
 
-    def test_add_empty_message(self):
-        """Test failing message add by leaving text blank"""
+    def test_add_empty_message(self):                       #specify that test should fail
+        """Test failing message add by leaving text blank"""    #weird test, specify why its necessary
 
         with app.test_client() as client:
             with client.session_transaction() as sess:
@@ -130,7 +130,7 @@ class MessageAddViewTestCase(MessageBaseViewTestCase):
             self.assertEqual(response.status_code, 200)
             self.assertIn('<button class="btn btn-outline-success">Add my message!</button>', html)
 
-
+                                                #Test for invalid session key
 
 class MessageShowViewTestCase(MessageBaseViewTestCase):
 
@@ -161,6 +161,7 @@ class MessageShowViewTestCase(MessageBaseViewTestCase):
             self.assertEqual(response.status_code, 200)
             self.assertIn('Access unauthorized.', html)
             self.assertIn('<p>Sign up now to get your own personalized timeline!</p>', html)
+                        #add 404 test
 
 
 class MessageDeleteViewTestCase(MessageBaseViewTestCase):
@@ -206,7 +207,7 @@ class MessageDeleteViewTestCase(MessageBaseViewTestCase):
 
         with app.test_client() as client:
             with client.session_transaction() as sess:
-                sess[CURR_USER_KEY] = u2.id
+                sess[CURR_USER_KEY] = u2.id                     #session key could be arbitrary wrong user
 
             response = client.post(
                 f'/messages/{self.m1_id}/delete',

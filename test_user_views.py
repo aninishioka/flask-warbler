@@ -160,7 +160,7 @@ class AnonUserGetViewTestCase(UserBaseViewTestCase):
             self.assertEqual(response.status_code, 200)
 
 
-    def test_unauthorized_user_likes_route(self):
+    def test_unauthorized_user_likes_route(self):                   #unauthenticated instead of unauthorized
         """Test unauthorized user can't access user likes route"""
 
         with app.test_client() as client:
@@ -192,7 +192,7 @@ class AnonUserPostViewTestCase(UserBaseViewTestCase):
             html = response.get_data(as_text=True)
 
             self.assertEqual(response.status_code, 200)
-            self.assertEqual(g.user.id, self.u2_id + 1)
+            self.assertEqual(g.user.id, self.u2_id + 1)                 #look at html (created username) not necessarily session (can change later)
             self.assertIn('<!-- This is the signed in home page -->', html)
 
 
@@ -258,7 +258,7 @@ class AnonUserPostViewTestCase(UserBaseViewTestCase):
             self.assertEqual(response.status_code, 200)
             self.assertEqual(g.user, None)
             self.assertIn('<h2 class="join-message">Join Warbler today.</h2>', html)
-            self.assertIn("Username already taken", html)
+            self.assertIn("Username already taken", html)   #StaffNote: Want to fix this eventually (email)
 
 
     def test_user_login(self):
@@ -553,7 +553,7 @@ class LoggedInUserPostViewTestCase(UserBaseViewTestCase):
             with client.session_transaction() as sess:
                 sess[CURR_USER_KEY] = self.u1_id
 
-            response = client.post(f"/users/follow/{self.u2_id + 1}", follow_redirects = True)
+            response = client.post(f"/users/follow/{self.u2_id + 1}", follow_redirects = True)      #primary key will never be 0 (better than self.u2_id + 1)
 
             self.assertEqual(response.status_code, 404)
 

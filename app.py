@@ -4,6 +4,7 @@ from dotenv import load_dotenv
 from flask import Flask, render_template, request, flash, redirect, session, g, request
 from flask_debugtoolbar import DebugToolbarExtension
 from sqlalchemy.exc import IntegrityError
+from functools import wraps
 
 from forms import UserAddForm, LoginForm, MessageForm, CsrfProtectForm, UpdateUserForm, LikeButtonForm
 from models import db, connect_db, User, Message, DEFAULT_IMAGE_URL, DEFAULT_HEADER_IMAGE_URL
@@ -25,6 +26,8 @@ connect_db(app)
 ##############################################################################
 # User signup/login/logout
 
+
+
 @app.before_request
 def add_user_to_g():
     """If we're logged in, add curr user to Flask global."""
@@ -40,6 +43,21 @@ def add_csrfform_to_g():
     """If we're logged in, add curr user to Flask global."""
 
     g.csrf_form = CsrfProtectForm()
+
+
+@app.errorhandler(404)
+def not_found(e):
+    return render_template("404.html")
+
+
+def login_required(f):
+    @wraps(f)
+    def login_decorator(*args, **kwargs):
+        if not g.user:
+            flash("Access unauthorized.", "danger")
+            return redirect("/")
+        return f(*args, **kwargs)
+    return login_decorator
 
 
 
@@ -132,15 +150,16 @@ def logout():
 # General user routes:
 
 @app.get('/users')
+@login_required
 def list_users():
     """Page with listing of users.
 
     Can take a 'q' param in querystring to search by that username.
     """
 
-    if not g.user:
-        flash("Access unauthorized.", "danger")
-        return redirect("/")
+    # if not g.user:
+    #     flash("Access unauthorized.", "danger")
+    #     return redirect("/")
 
     search = request.args.get('q')
 
