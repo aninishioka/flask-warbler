@@ -7,9 +7,8 @@
 
 import os
 from unittest import TestCase
-from sqlalchemy.exc import IntegrityError
 
-from models import db, User, Message, Follow
+from models import db, User, Message
 
 # BEFORE we import our app, let's set an environmental variable
 # to use a different database for tests (we need to do this
@@ -360,6 +359,22 @@ class AnonUserPostViewTestCase(UserBaseViewTestCase):
 
 
 class LoggedInUserGetViewTestCase(UserBaseViewTestCase):
+    def test_home_page(self):
+        """Test home page"""
+
+        with app.test_client() as client:
+            with client.session_transaction() as sess:
+                sess[CURR_USER_KEY] = self.u1_id
+
+            response = client.get("/")
+
+            html = response.get_data(as_text=True)
+
+            self.assertEqual(response.status_code, 200)
+            self.assertIn('<!-- This is the signed in home page -->', html)
+            self.assertIn("test_msg", html)
+
+
     def test_list_users(self):
         """Test show list users"""
 

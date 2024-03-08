@@ -341,17 +341,16 @@ def delete_message(message_id):
     Redirect to user page on success.
     """
 
-    if not g.user or not g.csrf_form.validate_on_submit():
+    msg = Message.query.get_or_404(message_id)
+
+    if not g.user or not g.csrf_form.validate_on_submit() or msg.user_id != g.user.id:
         flash("Access unauthorized.", "danger")
         return redirect("/")
 
-    msg = Message.query.get_or_404(message_id)
+    db.session.delete(msg)
+    db.session.commit()
 
-    if (msg.user_id == g.user.id):
-        db.session.delete(msg)
-        db.session.commit()
-
-        return redirect(f"/users/{g.user.id}")
+    return redirect(f"/users/{g.user.id}")
 
 @app.post('/messages/<int:message_id>/like')
 def like_message(message_id):

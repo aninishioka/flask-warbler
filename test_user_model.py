@@ -141,8 +141,8 @@ class UserModelTestCase(TestCase):
     def test_is_followed_by_both(self):
         """Test u1 and u2 follow each other."""
 
-        first_follow = Follow(
-            user_being_followed_id=self.u1_id,
+        first_follow = Follow(                  #test user.following/user.follows instead
+            user_being_followed_id=self.u1_id,  #avoid redundancy (followed_by_one is fine)
             user_following_id=self.u2_id)
 
         second_follow = Follow(
@@ -163,8 +163,8 @@ class UserModelTestCase(TestCase):
     def test_user_signup_success(self):
         """Test successful user signup."""
 
-        u3 = User.signup("u3", "u3@email.com", "password", None)
-
+        u3 = User.signup("u3", "u3@email.com", "password", None)    #test that stored password is not "password" (should be hashed)
+                                                                    #hashed password should also start with bcrypt keywords
         self.assertEqual(User.query.count(), 3)
         self.assertEqual(u3.image_url, DEFAULT_IMAGE_URL)
         self.assertEqual(u3.header_image_url, DEFAULT_HEADER_IMAGE_URL)
