@@ -276,7 +276,9 @@ def start_block(block_id):
     g.user.blocking.append(blocked_user)
     db.session.commit()
 
-    blocked_user.following.remove(g.user)
+    if g.user in  blocked_user.following:
+        blocked_user.following.remove(g.user)
+
     db.session.commit()
 
     return redirect(f"/users/{blocked_user.id}")
